@@ -1,0 +1,97 @@
+options{
+	STATIC= false;
+}
+PARSER_BEGIN(ParserDodawania)
+import java.io.PrintStream ;
+
+class ParserDodawania {
+
+    double previousValue;
+
+	public static void main(String[] args) throws ParseException, TokenMgrError, NumberFormatException {
+		ParserDodawania parser = new ParserDodawania(System.in);
+		parser.start(System.out);
+
+	}
+}
+PARSER_END(ParserDodawania)
+
+SKIP: {" "}
+SKIP: {"\n" | "\r" | "\r\n"}
+TOKEN: {<PLUS: "+" >}
+TOKEN: {<MINUS: "-" >}
+TOKEN: {<LICZBA: <NUMERY> | <NUMERY> "." <NUMERY> | <NUMERY> "." | "." <NUMERY>> }
+TOKEN: {<#NUMERY: (["0"-"9"])+ >}
+TOKEN: {<MNOZENIE : "*" >}
+TOKEN: {<DZIELENIE : "/" >}
+TOKEN: {<LEWY_NAWIAS : "(" >}
+TOKEN: {<PRAWY_NAWIAS : ")" >}
+TOKEN: {<POPRZEDNE_WYR : "$" >}
+
+void start(PrintStream printStream) throws NumberFormatException:
+{}
+{
+    (
+        previousValue = Expression()
+        {printStream.println(previousValue);}
+    )*
+    <EOF>
+}
+
+
+double Expression() throws NumberFormatException:
+{
+    double i;
+    double value;
+}
+{
+    value = Term()
+    (
+        <PLUS>
+        i = Term()
+        {value +=i;}
+    |
+        <MINUS>
+        i = Term()
+        {value -=i;}
+    )*
+    {return value;}
+}
+
+double Primary() throws NumberFormatException:
+{
+    Token t;
+    double d;
+}
+{
+    t = <LICZBA>
+    {return Double.parseDouble(t.image);}
+    |
+    <POPRZEDNE_WYR>
+    { return previousValue ; }
+    |
+    <LEWY_NAWIAS> d=Expression() <PRAWY_NAWIAS>
+    { return d ; }
+    |
+    <MINUS> d=Primary()
+    { return -d ; }
+}
+
+double Term() throws NumberFormatException:
+{
+    double i;
+    double value;
+}
+{
+    value = Primary()
+    (
+        <MNOZENIE>
+        i = Primary()
+        {value *=i;}
+    |
+        <DZIELENIE>
+        i = Primary()
+        {value /=i;}
+    )*
+    {return value;}
+}

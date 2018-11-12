@@ -1,0 +1,222 @@
+options{
+	STATIC = false;
+}
+PARSER_BEGIN(ParserCennika)
+import java.io.PrintStream;
+
+class ParserCennika {
+
+    double previousValue;
+
+	public static void main(String[] args) throws ParseException, TokenMgrError, NumberFormatException {
+		ParserCennika parser = new ParserCennika(System.in);
+		parser.start(System.out);
+	}
+}
+PARSER_END(ParserCennika)
+
+SKIP: {"\n" | "\r" | "\r\n" | "\t"}
+TOKEN: {<DELIMITER: "|" >}
+TOKEN: {<DATE_LABEL: "RMD" >}
+TOKEN: {<GROUP_LABEL: "GRP" >}
+TOKEN: {<PRODUCT_LABEL: "PRD" >}
+TOKEN: {<PROCESSOR_GROUP: "PROC" >}
+TOKEN: {<MEMORY_GROUP: "MEM" >}
+TOKEN: {<GRAPHIC_CARDS_GROUP: "GRAPH" >}
+TOKEN: {<DECIMAL: <NUMERY> > }
+TOKEN: {<DOUBLE: <NUMERY> | <NUMERY> "." <NUMERY> | <NUMERY> "." | "." <NUMERY>> }
+TOKEN: {<STRINGO_DECIMAL: <STRING><DECIMAL> | <DECIMAL><STRING> | " ">}
+TOKEN: {<MULTI_STRINGODECIMAL: (<STRINGO_DECIMAL>)+ >}
+TOKEN: {<STRING: (["a"-"z", "A"-"Z", " ", "/"])+> }
+TOKEN: {<#LITERY: ["a"-"z", "A"-"Z"]> }
+TOKEN: {<#NUMERY: (["0"-"9"])+ >}
+TOKEN: {<ANY: (<NUMERY> | <LITERY>)+ >}
+
+void start(PrintStream printStream) throws NumberFormatException:
+{}
+{
+    Date(printStream)
+    GroupName(printStream)
+    (ProcessorProduct(printStream))*
+    GroupName(printStream)
+    (MemoryProduct(printStream))*
+    GroupName(printStream)
+    (GraphicCardProduct(printStream))*
+
+    <EOF>
+}
+
+void Date(PrintStream printStream) throws NumberFormatException:
+{
+    Token t;
+    int year, month, day;
+}
+{
+    <DATE_LABEL>
+    <DELIMITER>
+    t = <DECIMAL>
+    {year = Integer.parseInt(t.image);}
+    <DELIMITER>
+    t = <DECIMAL>
+    {month= Integer.parseInt(t.image);}
+    <DELIMITER>
+    t = <DECIMAL>
+    {day = Integer.parseInt(t.image);}
+    {printStream.println("Data : " + year + "-" + month + "-" + day);}
+}
+
+String GroupName(PrintStream printStream) throws NumberFormatException:
+{
+    Token t;
+    String groupName;
+}
+{
+    <GROUP_LABEL>
+    <DELIMITER>
+    (
+        <PROCESSOR_GROUP>
+        {printStream.println("Procesory: \n"); return "PROC";}
+    |
+        <MEMORY_GROUP>
+        {printStream.println("Pamieci: \n"); return "MEM";}
+    |
+        <GRAPHIC_CARDS_GROUP>
+        {printStream.println("Karty graficzne: \n"); return "GRAPH";}
+    )
+}
+
+void ProcessorProduct(PrintStream printStream) throws NumberFormatException:
+{
+    Token t;
+}
+{
+    <PRODUCT_LABEL>
+    <DELIMITER>
+    t = <STRING>
+    {printStream.print("Producent: " + t.image + "\t");}
+    <DELIMITER>
+    t = getValue()
+    {printStream.print("Model: " + t.image + "\t");}
+    <DELIMITER>
+    t = <STRINGO_DECIMAL>
+    {printStream.print("Rdzenie: " + t.image + "\t");}
+    <DELIMITER>
+    t = getValue()
+    {printStream.print("Symbol: " + t.image + "\t");}
+    <DELIMITER>
+    t = <DOUBLE>
+    {printStream.print("Czestotliwosc: " + t.image + "\t");}
+    <DELIMITER>
+    t = getValue()
+    {printStream.print("L1: " + t.image + "\t");}
+    <DELIMITER>
+    t = getValue()
+    {printStream.print("L2: " + t.image + "\t");}
+    <DELIMITER>
+    t = getValue()
+    {printStream.print("L3: " + t.image + "\t");}
+    <DELIMITER>
+    t = <DOUBLE>
+    {printStream.print("Cena: " + t.image + "\t");}
+    <DELIMITER>
+    t = <STRING>
+    {printStream.print("Opakowanie: " + t.image + "\t\n");}
+
+}
+
+void MemoryProduct(PrintStream printStream) throws NumberFormatException:
+{
+    Token t;
+    String value;
+}
+{
+    <PRODUCT_LABEL>
+    <DELIMITER>
+    t = <STRING>
+    {printStream.print("Producent: " + t.image + "\t");}
+    <DELIMITER>
+    value = getComplexValueAsString()
+    {printStream.print("Model: " + value + "\t");}
+    <DELIMITER>
+    value = getComplexValueAsString()
+    {printStream.print("Rodzaj pamieci: " + value + "\t");}
+    <DELIMITER>
+    t = <DECIMAL>
+    {printStream.print("Pamiec (GB): " + t.image + "\t");}
+    <DELIMITER>
+    t = <DECIMAL>
+    {printStream.print("Taktowanie: " + t.image + "\t");}
+    <DELIMITER>
+    t = <DOUBLE>
+    {printStream.print("Napiecie: " + t.image + "\t\n");}
+
+}
+
+void GraphicCardProduct(PrintStream printStream) throws NumberFormatException:
+{
+    Token t;
+}
+{
+    <PRODUCT_LABEL>
+    <DELIMITER>
+    t = <STRING>
+    {printStream.print("Producent: " + t.image + "\t");}
+    <DELIMITER>
+    t = <STRINGO_DECIMAL>
+    {printStream.print("Model: " + t.image + "\t");}
+    <DELIMITER>
+    t = <DECIMAL>
+    {printStream.print("Ilosc pamieci (GB): " + t.image + "\t");}
+    <DELIMITER>
+    t = <STRINGO_DECIMAL>
+    {printStream.print("Rodzaj pamieci: " + t.image + "\t");}
+    <DELIMITER>
+    t = <DECIMAL>
+    {printStream.print("Taktowanie pamieci g.: " + t.image + "\t");}
+    <DELIMITER>
+    t = <DECIMAL>
+    {printStream.print("Taktowanie rdzenia: " + t.image + "\t\n");}
+
+}
+
+Token getValue():
+{
+    Token t;
+}
+{
+    (
+        t = <STRINGO_DECIMAL>
+        {return t;}
+        |
+        t = <STRING>
+        {return t;}
+        |
+        t = <DECIMAL>
+        {return t;}
+        |
+        t = <DOUBLE>
+        {return t;}
+    )
+}
+
+String getComplexValueAsString():
+{
+    Token t;
+    String result = "";
+}
+{
+    (
+        t = <MULTI_STRINGODECIMAL>
+        {return result = result + t.image;}
+        |
+        t = <STRINGO_DECIMAL>
+        {return result = result + t.image;}
+        |
+        t = <STRING>
+        {return result = result + t.image;}
+        |
+        t = <DECIMAL>
+        {return result = result + t.image;}
+    )*
+    {return result;}
+}

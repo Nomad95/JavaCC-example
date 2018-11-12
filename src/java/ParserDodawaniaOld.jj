@@ -1,0 +1,44 @@
+options{
+	STATIC= false;
+}
+PARSER_BEGIN(ParserDodawania)
+class ParserDodawania {
+	public static void main(String[] args) throws ParseException, TokenMgrError {
+		ParserDodawania parser = new ParserDodawania(System.in);
+		int val = parser.start();
+		System.out.println(val);
+	}
+}
+PARSER_END(ParserDodawania)
+
+SKIP: {" "}
+SKIP: {"\n" | "\r" | "\r\n"}
+TOKEN: {<PLUS: "+" >}
+TOKEN: {<LICZBA: <NUMERY> | <NUMERY> "." <NUMERY> | <NUMERY> "." | "." <NUMERY>> }
+TOKEN: {<#NUMERY: (["0"-"9"])+ >}
+
+
+int start():
+{
+    int i;
+    int value;
+}
+{
+    value = Primary()
+    (
+        <PLUS>
+        i = Primary()
+        {value +=i;}
+    )*
+    <EOF>
+    {return value;}
+}
+
+int Primary() throws NumberFormatException:
+{
+    Token t;
+}
+{
+    t = <LICZBA>
+    {return Integer.parseInt(t.image);}
+}
