@@ -1,0 +1,217 @@
+options{
+	STATIC = false;
+}
+PARSER_BEGIN(ParserCennika)
+import java.io.PrintStream;
+
+class ParserCennika {
+
+	public static void main(String[] args) throws ParseException, TokenMgrError, NumberFormatException {
+		ParserCennika parser = new ParserCennika(System.in);
+		parser.start(System.out);
+	}
+}
+PARSER_END(ParserCennika)
+
+SKIP: {"\n" | "\r" | "\r\n" | "\t"}
+TOKEN: {<DELIMITER: "|" >}
+TOKEN: {<DATE_LABEL: "RMD" >}
+TOKEN: {<GROUP_LABEL: "GRP" >}
+TOKEN: {<PRODUCT_LABEL: "PRD" >}
+TOKEN: {<PROCESSOR_GROUP: "PROC" >}
+TOKEN: {<MEMORY_GROUP: "MEM" >}
+TOKEN: {<GRAPHIC_CARDS_GROUP: "GRAPH" >}
+TOKEN: {<ANY: (<NUMERY> | <LITERY> | <ZNAKI>)+ >}
+TOKEN: {<#LITERY: ["a"-"z", "A"-"Z"]> }
+TOKEN: {<#NUMERY: (["0"-"9"])+ >}
+TOKEN: {<#ZNAKI: ([".", "/", " "])+ >}
+
+void start(PrintStream printStream) throws NumberFormatException:
+{
+    double averagePrice = 0;
+    double averagePriceAccumulator = 0;
+    int itemsCount = 0;
+}
+{
+    Date(printStream)
+    GroupName(printStream)
+    {averagePrice = 0; itemsCount = 0;}
+    (
+        averagePriceAccumulator = ProcessorProduct(printStream)
+        {averagePrice += averagePriceAccumulator; itemsCount++;}
+    )*
+    {
+        averagePrice = averagePrice/itemsCount;
+        printStream.println("Srednia: " + averagePrice);
+        printStream.println("Ilosc produktow: " + itemsCount + "\n");
+    }
+    {averagePrice = 0; itemsCount = 0;}
+    GroupName(printStream)
+    (
+        averagePriceAccumulator = MemoryProduct(printStream)
+        {averagePrice += averagePriceAccumulator; itemsCount++;}
+    )*
+    {
+        averagePrice = averagePrice/itemsCount;
+        printStream.println("Srednia: " + averagePrice);
+        printStream.println("Ilosc produktow: " + itemsCount + "\n");
+    }
+    {averagePrice = 0; itemsCount = 0;}
+    GroupName(printStream)
+    (
+        averagePriceAccumulator = GraphicCardProduct(printStream)
+        {averagePrice += averagePriceAccumulator; itemsCount++;}
+    )*
+    {
+        averagePrice = averagePrice/itemsCount;
+        printStream.println("Srednia: " + averagePrice);
+        printStream.println("Ilosc produktow: " + itemsCount + "\n");
+    }
+
+    <EOF>
+}
+
+void Date(PrintStream printStream) throws NumberFormatException:
+{
+    Token t;
+    String year, month, day;
+}
+{
+    <DATE_LABEL>
+    <DELIMITER>
+    t = <ANY>
+    {year = t.image;}
+    <DELIMITER>
+    t = <ANY>
+    {month= t.image;}
+    <DELIMITER>
+    t = <ANY>
+    {day = t.image;}
+    {printStream.println("Data : " + year + "-" + month + "-" + day);}
+}
+
+void GroupName(PrintStream printStream) throws NumberFormatException:
+{
+    Token t;
+    String groupName;
+}
+{
+    <GROUP_LABEL>
+    <DELIMITER>
+    (
+        <PROCESSOR_GROUP>
+        {printStream.println("Procesory: \n");}
+    |
+        <MEMORY_GROUP>
+        {printStream.println("Pamieci: \n");}
+    |
+        <GRAPHIC_CARDS_GROUP>
+        {printStream.println("Karty graficzne: \n");}
+    )
+}
+
+double ProcessorProduct(PrintStream printStream) throws NumberFormatException:
+{
+    Token t;
+    double price;
+}
+{
+    <PRODUCT_LABEL>
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Producent: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Model: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Rdzenie: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Symbol: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Czestotliwosc: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("L1: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("L2: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("L3: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Cena: " + t.image + "\t"); price = Double.parseDouble(t.image);}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Opakowanie: " + t.image + "\t\n");}
+    {return price;}
+}
+
+double MemoryProduct(PrintStream printStream) throws NumberFormatException:
+{
+    Token t;
+    String value;
+    double price;
+}
+{
+    <PRODUCT_LABEL>
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Producent: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Model: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Rodzaj pamieci: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Pamiec (GB): " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Taktowanie: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Cena: " + t.image + "\t"); price = Double.parseDouble(t.image);}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Napiecie: " + t.image + "\t\n");}
+    {return price;}
+
+}
+
+double GraphicCardProduct(PrintStream printStream) throws NumberFormatException:
+{
+    Token t;
+    double price;
+}
+{
+    <PRODUCT_LABEL>
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Producent: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Model: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Ilosc pamieci (GB): " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Rodzaj pamieci: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Cena: " + t.image + "\t"); price = Double.parseDouble(t.image);}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Taktowanie pamieci g.: " + t.image + "\t");}
+    <DELIMITER>
+    t = <ANY>
+    {printStream.print("Taktowanie rdzenia: " + t.image + "\t\n");}
+    {return price;}
+
+}
+
